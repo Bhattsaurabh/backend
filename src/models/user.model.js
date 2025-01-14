@@ -52,6 +52,8 @@ const userSchema = new mongoose.Schema(
 )
 
 
+//you can write methods directly into Schema
+
 //making hash of your password
 // only change if password modify
 // yaha pe callback ki jagah "function" ka use issliye hua taki userSchema k field ka b access le ske "this" keyword se
@@ -73,7 +75,7 @@ userSchema.pre("save", async function (next)  {
 // this se database ka data access kr skte h kisi methods k andar
 userSchema.methods.isPasswordCorrect = async function (userInputpassword) {
 
-   return await bcrypt.compare(userInputpassword, this.password)
+   return await bcrypt.compare(userInputpassword, this.password)      ///it returns a boolean value
 }
 
 //json web token is a type of key.

@@ -1,5 +1,7 @@
 import 'dotenv/config'
 import connectDB from "./db/index.js";
+import { app } from './app.js';
+
 
 // calling connectDB method from here 
 
@@ -10,13 +12,7 @@ connectDB()
              ${process.env.PORT}`);
 
     })
-}
-)
-.catch(err)
-{
-    console.log("MONGODB CONNECTION FAILED !!!", err)
-}
-
+})
 
 
 

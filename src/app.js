@@ -16,6 +16,12 @@ app.use(express.urlencoded({extended: true, limit: "16kb"}))   // used for url d
 app.use(express.static("public"))               // used for store public data like favicon, images and files
 app.use(cookieParser())                     // read and set cookie in user's browser
 
- 
+
+//routes import
+import userRouter from './routes/user.routes.js'
+
+//routes declaration
+app.use("/api/v1/users", userRouter)       // using middleware for routing because router are in different file
+
 
 export { app }
