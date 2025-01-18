@@ -60,10 +60,11 @@ const userSchema = new mongoose.Schema(
 // pre method kuch bhi "save" krne se pehle run hojyga
 // pre method k pass purane or new password ka access hoga tabhi toh check kr payega {this.ismodify("password")}
 
-userSchema.pre("save", async function (next)  {
-    
-    if(!this.ismodify("password"))    
+userSchema.pre('save', async function (next)  {
+    // pre function only run when password updates
+    if(!this.isModified('password'))    
         return next();
+    
     this.password = await bcrypt.hash(this.password, 10)
     next()
 })
