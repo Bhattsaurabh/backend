@@ -26,11 +26,11 @@ const userSchema = new mongoose.Schema(
             index: true
         },
         avatar: {
-            type: String,         // cloudnery se url aara h
+            type: String,         // cloudnery se jo url milega ussey DB m save krenge 
             required: true,
         },
         coverImage: {
-            type: String,         // cloudnery se url aara h
+            type: String,         // cloudnery se jo url milega ussey DB m save krenge 
         },
         watchHistory:   [ 
             {
@@ -59,9 +59,10 @@ const userSchema = new mongoose.Schema(
 // yaha pe callback ki jagah "function" ka use issliye hua taki userSchema k field ka b access le ske "this" keyword se
 // pre method kuch bhi "save" krne se pehle run hojyga
 // pre method k pass purane or new password ka access hoga tabhi toh check kr payega {this.ismodify("password")}
+// DB mai save hone se pehle ye run hoga tabhi toh password  hash m change hora h DB mai.
 
 userSchema.pre('save', async function (next)  {
-    // pre function only run when password updates
+    // pre function update password
     if(!this.isModified('password'))    
         return next();
     
@@ -106,7 +107,5 @@ userSchema.methods.generateRefreshToken = function(){
         }
     )
 }
-
-
 
 export const User = mongoose.model("User", userSchema)
