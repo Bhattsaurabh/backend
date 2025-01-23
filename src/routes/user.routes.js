@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { loginUser, logoutUser, registerUser, refreshAccessToken, changeCurrentPassword, getCurrentUser,
-    updateAccountDetails, updateUserAvatar, updateUserCoverImage
+    updateAccountDetails, updateUserAvatar, updateUserCoverImage,
+    getUserChannelProfile,
+    getWatchHistory
  } from "../controllers/user.controller.js";
 import {upload} from "../middlewares/multer.middleware.js"
 import {verifyJWT} from "../middlewares/auth.middleware.js"
@@ -41,15 +43,20 @@ router.route("/change-password").post(verifyJWT,changeCurrentPassword)
 
 router.route("/get-current-user-details").get(verifyJWT,getCurrentUser)
 
-router.route("/update-details").post(verifyJWT,updateAccountDetails)
+router.route("/update-details").patch(verifyJWT,updateAccountDetails)
 
-// yaha pe multiple middlewares ka use hora h 1: multer file upload k liye
-// 2: user login hai ki ni  uske liye jwt
+// yaha pe multiple middlewares ka use hora h 1: user login hai ki ni  uske liye jwt
+// 2: multer file upload k liye
+// patch request ko sirf specific data update krne k liye use krte h otherwise (put) b h.
 
-router.route("/update-avatar").post(upload.single('avatar') ,verifyJWT, updateUserAvatar)
+router.route("/update-avatar").patch(verifyJWT, upload.single('avatar'), updateUserAvatar)
 
-router.route("/update-coverimage").post(upload.single('coverImage'), verifyJWT,updateUserCoverImage)
+router.route("/update-coverimage").patch(verifyJWT, upload.single('coverImage'), updateUserCoverImage)
 
+// here in getUserChannelProfile hum url se data(username) lere h using req.params
+router.route("/c/:username").get(verifyJWT, getUserChannelProfile)
+
+router.route("/watchHistory").get(verifyJWT, getWatchHistory)
 
 
 export default router
