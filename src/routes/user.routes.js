@@ -1,5 +1,7 @@
 import { Router } from "express";
-import { loginUser, logoutUser, registerUser, refreshAccessToken } from "../controllers/user.controller.js";
+import { loginUser, logoutUser, registerUser, refreshAccessToken, changeCurrentPassword, getCurrentUser,
+    updateAccountDetails, updateUserAvatar, updateUserCoverImage
+ } from "../controllers/user.controller.js";
 import {upload} from "../middlewares/multer.middleware.js"
 import {verifyJWT} from "../middlewares/auth.middleware.js"
 
@@ -34,6 +36,20 @@ router.route("/login").post(loginUser)
 router.route("/logout").post(verifyJWT, logoutUser)
 
 router.route("/refresh-token").post(refreshAccessToken)
+
+router.route("/change-password").post(verifyJWT,changeCurrentPassword)
+
+router.route("/get-current-user-details").get(verifyJWT,getCurrentUser)
+
+router.route("/update-details").post(verifyJWT,updateAccountDetails)
+
+// yaha pe multiple middlewares ka use hora h 1: multer file upload k liye
+// 2: user login hai ki ni  uske liye jwt
+
+router.route("/update-avatar").post(upload.single('avatar') ,verifyJWT, updateUserAvatar)
+
+router.route("/update-coverimage").post(upload.single('coverImage'), verifyJWT,updateUserCoverImage)
+
 
 
 export default router

@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
+import mongoose from "mongoose"
 
 
 const generateAccessandRefreshTokens = async (userId) => {
@@ -272,10 +273,12 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 })
 
 // changing password of user
-const changeCurrentPassword  = asyncHandler( async(req,res)  =>{
+const changeCurrentPassword  = asyncHandler( async(req,res) =>{
 
+    console.log(req.body)
     const {oldPassword, newPassword} = req.body
     const user = await User.findById(req.user?._id)
+    console.log(user)
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
 
     if(!isPasswordCorrect)
@@ -293,15 +296,19 @@ const changeCurrentPassword  = asyncHandler( async(req,res)  =>{
 // getting current user details
 const getCurrentUser = asyncHandler( async(req, res) =>{
 
-    return res.status(200)
-    .json(200, req.user, "Current user fetched successfully")
+    return res
+    .status(200)
+    .json( new ApiResponse(200, req.user, "Current user fetched successfully"))
+    
 })
 
 //updating user details
 const updateAccountDetails = asyncHandler( async(req, res) =>{
-     const {fullName, email} = req.body
+    
+     console.log(req.body)
+     const {fullName, email, username} = req.body
 
-     if(!fullName && !email)
+     if(!fullName && !email && !username)
      {
         throw new ApiError(400, "All fields are required")
      }
@@ -309,7 +316,7 @@ const updateAccountDetails = asyncHandler( async(req, res) =>{
      const user = User.findByIdAndUpdate(
         req.user?._id, 
         {
-            $set: {fullName, email}
+            $set: {fullName, email, username}
         },
         {new: true}
      ).select("-password")
@@ -321,6 +328,7 @@ const updateAccountDetails = asyncHandler( async(req, res) =>{
 
 // updating user avatar file
 const updateUserAvatar = asyncHandler(async(req, res) =>{
+    console.log(req.file)
     const avatarLocalPath = req.file?.path
     if(!avatarLocalPath)
         {
@@ -332,18 +340,19 @@ const updateUserAvatar = asyncHandler(async(req, res) =>{
     {
         throw new ApiError(400, "Error while uploading avatar")
     }
-
-    const user = await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set: {avatar: avatarCloud.url}
-        },
-        {new: true}
-    ).select("-password")       // response se password remove krre h
-
-    return res
-    .status(200)
-    .json(new ApiResponse(200, user, "Avatar successfully updated" ))
+    
+        const user = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set: {avatar: avatarCloud.url}
+            },
+            {new: true}
+        ).select("-password")       // response se password remove krre h
+    
+        return res
+        .status(200)
+        .json(new ApiResponse(200, user, "Avatar successfully updated" ))
+    
 
 })
 
@@ -376,4 +385,130 @@ const updateUserCoverImage = asyncHandler(async(req, res) =>{
 })
 
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage }
+// getting User channel profile
+
+const getUserChannelProfile = asyncHandler(async(req, res) =>{
+    const {username} = req.params      //params is when we need data from url 
+
+    if(!username)
+    {
+        throw new ApiError(400, "Username is missing")
+    }
+
+
+    // getting channel's details like total subcribers, subscribedTo, avatar, coverimage etc.
+    //MongoDB aggregation pipelines
+    // In aggregation pipelines every stage output treat as input for next stage
+    // aggregation pipeline return array of objects
+    const channel =  await User.aggregate([
+        {
+            $match: {                                   // $match pipeline used for finding the matched document
+                username: username?.toLowerCase()
+            }
+        },
+        {                                               //mera channel count krk mere subscriber count krra h
+            $lookup: {                                  // $lookup pipeline is used as left outer join
+                from: "subscription",
+                localField: "_id",                      // yaha pe _id as a PK ki tarah h
+                foreignField: "channel",                // aor channel jo ki user hi h wo FK ki tarah h
+                as: "subscribers"
+            }
+        },
+        {                                               // mene kitne channel subscribed kr rkhe h
+            $lookup: {                                  // $lookup pipeline is used as left outer join
+                from: "subscription",
+                localField: "_id",                      // yaha pe _id as a PK ki tarah h
+                foreignField: "subscriber",             // aor subscriber jo ki user hi h wo FK ki tarah h
+                as: "subscribedTo"
+            }
+        },
+        {                                                // adding 3 more field to User model i.e subscribers, subcribedTo and (subscribe/subscribed) button
+            $addField: {                                // $addField pipeline is used to add new field to document
+                subscribersCount: {
+                    $size: "$subscribers"               //$size operator is used to count the total number of elements in an array
+                },
+                channelSubscribedToCount: {
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {                            //$in operator is used check a field value within a array
+                        if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project: {                                        // $project pipeline is used to pass the specific fields to next stage
+                fullName: 1,
+                username: 1,
+                subscribersCount: 1,
+                channelSubscribedToCount: 1,
+                isSubscribed: 1,
+                avatar: 1,
+                coverImage: 1,
+                email: 1
+            }
+        }
+    ])
+    //console.log(channel)
+
+    if(!channel?.length)
+    {
+        throw new ApiError(404, "channel does not exist")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, channel[0], "User channel fetched Successfully")
+    )
+
+
+})
+
+// getting watch-History  
+const getWatchHistory = asyncHandler(async(req, res) =>{
+    const user = await User.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId.createFromHexString(req.user._id)
+            }
+        },
+        {
+            $lookup: {
+                from: "Video",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from : "User",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        avatar: 1
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+
+    return res
+    .status(200)
+    .json( new ApiResponse(200, user[0].watchHistory, "Watch history fetched successfully"))
+})
+
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage, getUserChannelProfile, getWatchHistory }
