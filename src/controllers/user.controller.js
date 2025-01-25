@@ -203,8 +203,8 @@ const logoutUser = asyncHandler(async (req, res) => {
 
     User.findByIdAndUpdate(req.user.id,
         {
-            $set: {
-                refreshToken: undefined
+            $unset: {
+                refreshToken: 1     //this remove the field from document
             }
         },
         {
@@ -239,7 +239,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     try {
         const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
 
-        const user = User.findById(decodedToken?._id)
+        const user = await User.findById(decodedToken?._id)
 
         if (!user) {
             throw new ApiError(401, "Invalid refresh token")
@@ -305,26 +305,37 @@ const getCurrentUser = asyncHandler( async(req, res) =>{
 //updating user details
 const updateAccountDetails = asyncHandler( async(req, res) =>{
     
-     console.log(req.body)
-     const {fullName, email, username} = req.body
-
-     if(!fullName && !email && !username)
+     const updateField = req.body
+     console.log(updateField)
+     if(!updateField)
      {
         throw new ApiError(400, "All fields are required")
      }
 
-     const user = User.findByIdAndUpdate(
-        req.user?._id, 
-        {
-            $set: {fullName, email, username}
-        },
-        {new: true}
-     ).select("-password")
+     
+    try {
+        const user = await User.findByIdAndUpdate(
+               req.user?._id, 
+               {
+                $set: updateField
+               },
+               { new: true}
+            ).select("-password")
+    
+        // console.log(user)
+    
+         return res
+         .status(200)
+         .json(new ApiResponse(200, user, "Account details successfully updated"))
+    } catch (error) {
+        throw new ApiError(500,  "your data is not updated")
+        
+     }
 
-     return res
-     .status(200)
-     .json(new ApiResponse(200, user, "Account details successfully updated"))
+
 })
+
+ 
 
 // updating user avatar file
 const updateUserAvatar = asyncHandler(async(req, res) =>{
@@ -341,17 +352,24 @@ const updateUserAvatar = asyncHandler(async(req, res) =>{
         throw new ApiError(400, "Error while uploading avatar")
     }
     
-        const user = await User.findByIdAndUpdate(
-            req.user?._id,
-            {
-                $set: {avatar: avatarCloud.url}
-            },
-            {new: true}
-        ).select("-password")       // response se password remove krre h
-    
-        return res
-        .status(200)
-        .json(new ApiResponse(200, user, "Avatar successfully updated" ))
+
+        try {
+            const user = await User.findByIdAndUpdate(
+                req.user?._id,
+                {
+                    $set: {avatar: avatarCloud.url}
+                },
+                {new: true}
+            ).select("-password")       // response se password remove krre h
+            
+            console.log(user)
+            return res
+            .status(200)
+            .json(new ApiResponse(200, user, "Avatar successfully updated" ))
+        } catch (error) {
+            throw new ApiError(500, "avatar is not updated")
+            
+        }
     
 
 })
@@ -370,17 +388,21 @@ const updateUserCoverImage = asyncHandler(async(req, res) =>{
         throw new ApiError(400, "Error while uploading CoverImage")
     }
 
-    const user = await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set: {coverImage: CoverImageCloud.url}
-        },
-        {new: true}
-    ).select("-password")       // response se password remove krre h
-
-    return res
-    .status(200)
-    .json(new ApiResponse(200, user, "coverImage successfully updated" ))
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $set: {coverImage: CoverImageCloud.url}
+            },
+            {new: true}
+        ).select("-password")       // response se password remove krre h
+    
+        return res
+        .status(200)
+        .json(new ApiResponse(200, user, "coverImage successfully updated" ))
+    } catch (error) {
+        throw new ApiError(500, "coverimage is not updated")
+    }
 
 })
 
@@ -390,11 +412,11 @@ const updateUserCoverImage = asyncHandler(async(req, res) =>{
 const getUserChannelProfile = asyncHandler(async(req, res) =>{
     const {username} = req.params      //params is when we get data from url 
 
-    if(!username)
+    if(!username?.trim())
     {
         throw new ApiError(400, "Username is missing")
     }
-
+    console.log(username)
 
     // getting channel's details like total subcribers, subscribedTo, avatar, coverimage etc.
     //MongoDB aggregation pipelines
@@ -423,7 +445,7 @@ const getUserChannelProfile = asyncHandler(async(req, res) =>{
             }
         },
         {                                                // adding 3 more field to User model i.e subscribers, subcribedTo and (subscribe/subscribed) button
-            $addField: {                                // $addField pipeline is used to add new field to document
+            $addFields: {                                // $addField pipeline is used to add new field to document
                 subscribersCount: {
                     $size: "$subscribers"               //$size operator is used to count the total number of elements in an array
                 },
@@ -473,7 +495,7 @@ const getWatchHistory = asyncHandler(async(req, res) =>{
     const user = await User.aggregate([
         {
             $match: {
-                _id: new mongoose.Types.ObjectId.createFromHexString(req.user._id)
+                _id: new mongoose.Types.ObjectId(req.user._id)
             }
         },
         {

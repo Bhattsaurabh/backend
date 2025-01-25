@@ -11,7 +11,7 @@ import { User } from "../models/user.model.js";
 // issliye ye middleware ka use krk logout method par jane se pehle req mai req.user ko add krdenge jisme  access and refresh tokens honge.
 
 
-export const verifyJWT = asyncHandler(async (req, _, next) => {
+export const verifyJWT = asyncHandler(async (req, res, next) => {
 
   try {                                       
                                                 // for mobile user
