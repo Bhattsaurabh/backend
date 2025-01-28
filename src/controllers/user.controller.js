@@ -201,7 +201,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
 const logoutUser = asyncHandler(async (req, res) => {
 
-    User.findByIdAndUpdate(req.user.id,
+    await User.findByIdAndUpdate(req.user.id,
         {
             $unset: {
                 refreshToken: 1     //this remove the field from document
@@ -406,6 +406,28 @@ const updateUserCoverImage = asyncHandler(async(req, res) =>{
 
 })
 
+// delete the coverimage
+
+const deleteCoverImage = asyncHandler(async(req, res)   =>{
+
+    try {
+        const user = await User.findByIdAndUpdate(
+            req.user?._id,
+            {
+                $unset: {
+                    coverImage: 1
+                }
+            }
+        ).select("-password")
+    
+        return res
+        .status(200)
+        .json(new ApiResponse(200, "CoverImage deleted successfully"))
+    } catch (error) {
+        throw new ApiError(400, "CoverImage not deleted")
+    }
+
+})
 
 // getting User channel profile
 
@@ -462,7 +484,7 @@ const getUserChannelProfile = asyncHandler(async(req, res) =>{
             }
         },
         {
-            $project: {                                        // $project pipeline is used to pass the specific fields to next stage
+            $project: {                                 // $project pipeline is used to pass the specific fields to next stage
                 fullName: 1,
                 username: 1,
                 subscribersCount: 1,
@@ -476,7 +498,7 @@ const getUserChannelProfile = asyncHandler(async(req, res) =>{
     ])
     //console.log(channel)
 
-    if(!channel?.length)
+    if(!channel?.length)        // array of objects hoga channel m
     {
         throw new ApiError(404, "channel does not exist")
     }
@@ -516,7 +538,8 @@ const getWatchHistory = asyncHandler(async(req, res) =>{
                                     $project: {
                                         fullName: 1,
                                         username: 1,
-                                        avatar: 1
+                                        avatar: 1,
+                                        
                                     }
                                 }
                             ]
@@ -529,8 +552,8 @@ const getWatchHistory = asyncHandler(async(req, res) =>{
 
     return res
     .status(200)
-    .json( new ApiResponse(200, user[0].watchHistory, "Watch history fetched successfully"))
+    .json( new ApiResponse(200, user.watchHistory, "Watch history fetched successfully"))
 })
 
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage, getUserChannelProfile, getWatchHistory }
+export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage, deleteCoverImage, getUserChannelProfile, getWatchHistory }

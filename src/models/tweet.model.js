@@ -1,4 +1,4 @@
-import mongoose, { mongo, Schema } from "mongoose";
+import mongoose from "mongoose";
 
 const tweetSchema = new mongoose.Schema({
     content: {
@@ -7,7 +7,8 @@ const tweetSchema = new mongoose.Schema({
     },
     owner: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
+        ref: "User",
+        unique: false
     }
 }, {timestamps: true})
 

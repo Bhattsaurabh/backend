@@ -1,9 +1,20 @@
 import { Router } from "express";
-import { loginUser, logoutUser, registerUser, refreshAccessToken, changeCurrentPassword, getCurrentUser,
-    updateAccountDetails, updateUserAvatar, updateUserCoverImage,
-    getUserChannelProfile,
-    getWatchHistory
- } from "../controllers/user.controller.js";
+import {
+ loginUser,
+ logoutUser,
+ registerUser,
+ refreshAccessToken,
+ changeCurrentPassword,
+ getCurrentUser,
+ updateAccountDetails,
+ updateUserAvatar,
+ updateUserCoverImage,
+ deleteCoverImage,
+ getUserChannelProfile,
+ getWatchHistory,
+
+    } from "../controllers/user.controller.js";
+    
 import {upload} from "../middlewares/multer.middleware.js"
 import {verifyJWT} from "../middlewares/auth.middleware.js"
 
@@ -52,6 +63,8 @@ router.route("/update-details").patch(verifyJWT,updateAccountDetails)
 router.route("/update-avatar").patch(verifyJWT, upload.single('avatar'), updateUserAvatar)
 
 router.route("/update-coverimage").patch(verifyJWT, upload.single('coverImage'), updateUserCoverImage)
+
+router.route("/delete-coverimage").delete(verifyJWT, deleteCoverImage)
 
 // here in getUserChannelProfile hum url se data(username) lere h using req.params
 router.route("/c/:username").get(verifyJWT, getUserChannelProfile)
