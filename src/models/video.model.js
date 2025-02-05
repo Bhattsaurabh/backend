@@ -25,7 +25,7 @@ const videoSchema = new mongoose.Schema(
             required: true,
         },
         views: {
-            type: number,   
+            type: Number,   
             default: 0,
         },
         isPublished: {
@@ -34,7 +34,8 @@ const videoSchema = new mongoose.Schema(
         },
         owner: {
             type:mongoose.Schema.Types.ObjectId,
-            ref: "User"   
+            ref: "User",
+            unique: false   
            
         },
 
