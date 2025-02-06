@@ -10,7 +10,7 @@ const subscriptionSchema = mongoose.Schema({
         ref: "User"
     }
 
-},{timestamps})
+}, {timestamps: true})
 
 
 
