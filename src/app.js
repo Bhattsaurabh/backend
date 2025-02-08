@@ -22,11 +22,18 @@ import userRouter from './routes/user.routes.js'
 import tweetRouter from './routes/tweet.routes.js'
 import videoRouter from './routes/video.routes.js'
 import subcriptionRouter from './routes/subscription.routes.js'
+import playlistRouter from './routes/playlist.routes.js'
+
 
 //routes declaration
 app.use("/api/v1/users", userRouter)       // using middleware for routing because router are in different file
 app.use("/api/v1/tweets", tweetRouter)
 app.use("/api/v1/videos", videoRouter)
 app.use("/api/v1/subscription", subcriptionRouter)
+app.use("/api/v1/playlist", playlistRouter)
+
+
+
+
 
 export { app }
