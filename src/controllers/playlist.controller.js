@@ -105,25 +105,46 @@ const getUserPlaylists = asyncHandler(async(req, res)  =>{
                     },
                     {
                         $unset: "owner"
-                     },
-                     {
+                    },
+                    {
                         $addFields: {
                             videoFile: "$videoFile.url"
                         }
-                     },
-                     {
+                    },
+                    {
                         $addFields: {
                             thumbnail: "$thumbnail.url"
                         }
-                     }
+                    }
 
                  ]
              }
  
          },
          {
-            $unwind: "$videos"
-         }
+            $lookup: {
+                from: "User",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
+                    {
+                        $project: {
+                            fullName: 1,
+                            username: 1,
+                            avatar: "$avtar.url"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            $addFields: {
+                owner: {
+                    $first: "$owner"
+                }
+            }
+        }
      ]
  
      const usersPlaylist = await Playlist.aggregate(pipeline)
