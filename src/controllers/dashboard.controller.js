@@ -61,9 +61,45 @@ const getChannelAllVideos = asyncHandler(async(req, res)    =>{
          throw new ApiError(401, "channel not exist")
      }
  
-     const videos = await Video.find({owner: channelId})
+     const videos = await Video.aggregate([
+         {
+             $match: {
+                 owner: new mongoose.Types.ObjectId(channelId)
+             }
+         },
+         {
+             $lookup: {
+                 from: "User",
+                 localField: "owner",
+                 foreignField: "_id",
+                 as: "owner",
+                 pipeline: [
+                    {
+                        $project: {
+                            fullName: 1,
+                            username: 1,
+                            avatar: 1,
+                        }
+                    },
+                   
+                   
+                 ]
+            }
+        },
+        {
+            $addFields:{
+                 videoFile: "$videoFile.url"
+                }
+        },
+        {
+            $addFields:{
+                thumbnail: "$thumbnail.url"
+               }
+        }
+                 
+     ])
      
-    // console.log(videos)
+     console.log(videos)
      return res
      .status(200)
      .json( new ApiResponse(200, videos === null ? "No video posted" : videos, "Videos fetched successfully"))
